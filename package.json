@@ -1,3 +1,6 @@
+"overrides": {
+  "ethers": "5.7.2"
+}
 {
   "name": "auditai",
   "version": "0.1.0",
