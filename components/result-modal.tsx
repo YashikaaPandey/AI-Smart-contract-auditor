@@ -3,7 +3,31 @@
 import { Dialog } from "@headlessui/react";
 import { Loader2 } from "lucide-react";
 
-export default function ResultsModal({ isOpen = false, closeModal = () => {}, loading = false, results = null }) {
+// Define types for metrics and audit results
+type Metric = {
+  metric: string;
+  score: number;
+};
+
+type AuditResults = {
+  report: string;
+  metrics: Metric[];
+  suggestions: string[];
+};
+
+interface ResultsModalProps {
+  isOpen?: boolean;
+  closeModal?: () => void;
+  loading?: boolean;
+  results?: AuditResults | null;
+}
+
+export default function ResultsModal({
+  isOpen = false,
+  closeModal = () => {},
+  loading = false,
+  results = null,
+}: ResultsModalProps) {
   return (
     <Dialog open={isOpen} onClose={closeModal} className="relative z-50">
       <div className="fixed inset-0 bg-black bg-opacity-50" aria-hidden="true" />
@@ -29,53 +53,51 @@ export default function ResultsModal({ isOpen = false, closeModal = () => {}, lo
               </div>
 
               {/* Metric Scores with Dynamic Circle Colors */}
-<div>
-  <h3 className="text-xl font-semibold mb-4">Metric Scores</h3>
-  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-    {results.metrics && results.metrics.length > 0 ? (
-      results.metrics.map((metric, idx) => {
-        // Determine circle color based on score
-        const circleColor = metric.score <= 4 ? "red" : "green";
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Metric Scores</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                  {results.metrics && results.metrics.length > 0 ? (
+                    results.metrics.map((metric, idx) => {
+                      const circleColor = metric.score <= 4 ? "red" : "green";
 
-        return (
-          <div key={idx} className="flex flex-col items-center">
-            <div className="relative w-20 h-20">
-              <svg className="w-20 h-20">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  stroke="gray"
-                  strokeWidth="6"
-                  fill="none"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="36"
-                  stroke={circleColor}
-                  strokeWidth="6"
-                  fill="none"
-                  strokeDasharray={2 * Math.PI * 36}
-                  strokeDashoffset={2 * Math.PI * 36 * (1 - metric.score / 10)}
-                  strokeLinecap="round"
-                  transform="rotate(-90 40 40)"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center font-semibold">
-                {metric.score}/10
-              </span>
-            </div>
-            <span className="mt-2 text-sm">{metric.metric}</span>
-          </div>
-        );
-      })
-    ) : (
-      <p className="text-gray-400">No metrics available.</p>
-    )}
-  </div>
-</div>
-
+                      return (
+                        <div key={idx} className="flex flex-col items-center">
+                          <div className="relative w-20 h-20">
+                            <svg className="w-20 h-20">
+                              <circle
+                                cx="40"
+                                cy="40"
+                                r="36"
+                                stroke="gray"
+                                strokeWidth="6"
+                                fill="none"
+                              />
+                              <circle
+                                cx="40"
+                                cy="40"
+                                r="36"
+                                stroke={circleColor}
+                                strokeWidth="6"
+                                fill="none"
+                                strokeDasharray={2 * Math.PI * 36}
+                                strokeDashoffset={2 * Math.PI * 36 * (1 - metric.score / 10)}
+                                strokeLinecap="round"
+                                transform="rotate(-90 40 40)"
+                              />
+                            </svg>
+                            <span className="absolute inset-0 flex items-center justify-center font-semibold">
+                              {metric.score}/10
+                            </span>
+                          </div>
+                          <span className="mt-2 text-sm">{metric.metric}</span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-400">No metrics available.</p>
+                  )}
+                </div>
+              </div>
 
               {/* Suggestions */}
               <div>
