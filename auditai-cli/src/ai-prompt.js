@@ -1,8 +1,21 @@
-const OpenAI = require("openai");
+import OpenAI from "openai";
 
-const analyzeContract = async (contract, apiKey) => {
+export interface AuditMetric {
+  metric: string;
+  score: number;
+}
+
+export interface AuditResult {
+  section: string;
+  details: string | AuditMetric[];
+}
+
+export const analyzeContract = async (
+  contract: string,
+  apiKey: string
+): Promise<AuditResult[]> => {
   const openai = new OpenAI({
-    apiKey: apiKey,
+    apiKey,
   });
 
   const params = {
@@ -11,7 +24,7 @@ const analyzeContract = async (contract, apiKey) => {
       {
         role: "user",
         content: `Your role and goal is to be an AI Smart Contract Auditor. Your job is to perform an audit on the given smart contract. Here is the smart contract: ${contract}.
-        Please provide the results in the following array format for easy front-end display:
+        Please provide the results in the following JSON array format for easy front-end display:
         [
           {
             "section": "Audit Report",
@@ -50,31 +63,21 @@ const analyzeContract = async (contract, apiKey) => {
             "section": "Suggestions for Improvement",
             "details": "Suggestions for improving the smart contract in terms of security, performance, and any other identified weaknesses."
           }
-        ]
-        Thank you.`,
+        ]`,
       },
     ],
   };
 
   const chatCompletion = await openai.chat.completions.create(params);
 
-  const auditResults = JSON.parse(chatCompletion.choices[0].message.content);
+  const rawContent = chatCompletion.choices[0]?.message?.content ?? "[]";
 
-  console.log("Audit Report:");
-  console.log(auditResults.find((r) => r.section === "Audit Report").details);
+  let auditResults: AuditResult[] = [];
+  try {
+    auditResults = JSON.parse(rawContent);
+  } catch (error) {
+    console.error("Failed to parse AI response as JSON:", error, rawContent);
+  }
 
-  console.log("\nMetric Scores:");
-  auditResults
-    .find((r) => r.section === "Metric Scores")
-    .details.forEach((metric) => {
-      console.log(`${metric.metric}: ${metric.score}/10`);
-    });
-
-  console.log("\nSuggestions for Improvement:");
-  console.log(
-    auditResults.find((r) => r.section === "Suggestions for Improvement")
-      .details
-  );
+  return auditResults;
 };
-
-module.exports = { analyzeContract };
