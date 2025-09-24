@@ -15,42 +15,53 @@ export const analyzeContract = async (contract: string): Promise<AuditResult> =>
     });
 
     if (!res.ok) {
-      console.error(`API request failed with status ${res.status}`);
       throw new Error(`API request failed with status ${res.status}`);
     }
 
     const data = await res.json();
 
-    // Extract sections
-    const reportSection: string = data.report || "Audit parsing failed.";
-    const metricsSection: { metric: string; score: number }[] = Array.isArray(data.metrics)
-      ? data.metrics
-      : [];
-
-    // Suggestions: always return an array
-    let suggestionsSection: string[] = [];
-    if (Array.isArray(data.suggestions)) {
-      suggestionsSection = data.suggestions;
-    } else if (typeof data.suggestions === "string") {
-      suggestionsSection = data.suggestions
-        .split(/\n/)
-        .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 0);
-    } else {
-      suggestionsSection = ["No suggestions available."];
+    // If AI returned a stringified JSON array, parse it
+    let parsed = data;
+    if (typeof data === "string") {
+      parsed = JSON.parse(data);
     }
 
+    // If AI returned the array of sections
+    if (Array.isArray(parsed)) {
+      const reportSection = parsed.find((s) => s.section === "Audit Report")?.details || "No report available.";
+      const metricsSection = parsed.find((s) => s.section === "Metric Scores")?.details || [];
+      const suggestionsRaw = parsed.find((s) => s.section === "Suggestions for Improvement")?.details || [];
+
+      // Ensure suggestions are always an array of strings
+      let suggestionsSection: string[] = [];
+      if (Array.isArray(suggestionsRaw)) {
+        suggestionsSection = suggestionsRaw;
+      } else if (typeof suggestionsRaw === "string") {
+        suggestionsSection = suggestionsRaw
+          .split(/\n/)
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0);
+      }
+
+      return {
+        report: reportSection,
+        metrics: metricsSection,
+        suggestions: suggestionsSection,
+      };
+    }
+
+    // Fallback if data already in expected shape
     return {
-      report: reportSection,
-      metrics: metricsSection,
-      suggestions: suggestionsSection,
+      report: data.report || "No report available.",
+      metrics: data.metrics || [],
+      suggestions: data.suggestions || ["No suggestions available."],
     };
   } catch (error) {
-    console.error("Failed to fetch audit results:", error);
+    console.error("Failed to parse audit results:", error);
     return {
       report: "Audit parsing failed.",
       metrics: [],
-      suggestions: ["No suggestions available."],
+      suggestions: ["Parsing failed."],
     };
   }
 };
