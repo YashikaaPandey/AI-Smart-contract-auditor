@@ -32,11 +32,10 @@ export const analyzeContract = async (contract: string): Promise<AuditResult> =>
     if (Array.isArray(data.suggestions)) {
       suggestionsSection = data.suggestions;
     } else if (typeof data.suggestions === "string") {
-      // Split string by line breaks or numbered items
       suggestionsSection = data.suggestions
         .split(/\n/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0);
     } else {
       suggestionsSection = ["No suggestions available."];
     }
